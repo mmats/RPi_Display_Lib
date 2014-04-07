@@ -1,10 +1,3 @@
-/*
- * Disp.h
- *
- *  Created on: 05.10.2013
- *      Author: mats
- */
-
 #ifndef DISP_H_
 #define DISP_H_
 

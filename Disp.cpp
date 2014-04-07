@@ -1,10 +1,3 @@
-/*
- * Disp.cpp
- *
- *  Created on: 05.10.2013
- *      Author: mats
- */
-
 #include "Disp.h"
 #include <GPIO.h>
 #include <ctime>
