@@ -156,6 +156,13 @@ bool Disp::isBusy()
 
 void Disp::initDisplay()
 {
+	init_state = START;
+	disp_state = INIT;
+	out_state  = ROW_1_SET;
+}
+
+void Disp::instructDisplay()
+{
 	char tmp;
 
 	switch( init_state )
@@ -182,36 +189,86 @@ void Disp::initDisplay()
 		break;
 
 	case SETTING1:
-		memcpy( &tmp, &settings1, sizeof(settings1) );
+		memcpy( &tmp, &settings1, sizeof(char) );
 		write( tmp,CMD );
 		init_state = SETTING2;
 		break;
 
 	case SETTING2:
-		memcpy( &tmp, &settings2, sizeof(settings2) );
+		memcpy( &tmp, &settings2, sizeof(char) );
 		write( tmp,CMD );
 		init_state = SETTING3;
 		break;
 
 	case SETTING3:
-		memcpy( &tmp, &settings3, sizeof(settings3) );
+		memcpy( &tmp, &settings3, sizeof(char) );
 		write( tmp,CMD );
 		init_state = SETTING4;
 		break;
 
 	case SETTING4:
-		memcpy( &tmp, &settings4, sizeof(settings4) );
+		memcpy( &tmp, &settings4, sizeof(char) );
 		write( tmp,CMD );
 		init_state = MAX_INIT_DISP;
 		break;
 
 	case MAX_INIT_DISP:
-//		disp_state = WARTEN_AUF_EINGABE;
-//		Disp_job = no_job;
+		disp_state = WAITING;
+		disp_job = no_job;
 		break;
 
 	default:
 		init_state = START;
 		break;
+	}
+}
+
+void Disp::process()
+{
+	static int i, e;
+
+	// if( Timer_over(TIMER_LCD) )
+	{
+		switch (disp_state)
+		{
+		case INIT:
+			instructDisplay();
+//			Set_timer(TIMER_LCD, zeit2);
+			break;
+
+		case OPERATION:
+			e++;
+			switch (out_state)
+			{
+			case ROW_1_SET:
+				write(0x80, CMD);
+				out_state = ROW_1_WRITE;
+				break;
+
+			case ROW_1_WRITE:
+				write(outArray[i], DATA);
+				i++;
+				if (e > 20)
+					out_state = MAX_OUT;
+				break;
+
+			case MAX_OUT:
+				disp_state = WAITING;
+				disp_job = no_job;
+				break;
+			}
+//			Set_timer(TIMER_LCD, zeit2);
+			break;
+
+		case WAITING:
+			if (disp_job == text_job)
+			{
+				e = 0;
+				i = 0;
+				disp_state = OPERATION;
+				out_state = ROW_1_SET;
+			}
+			break;
+		}
 	}
 }

@@ -34,6 +34,7 @@ private:
 	void read(char& data, regSel rs=DATA);
 	bool isBusy();
 	void initDisplay();
+	void instructDisplay();
 
 	GPIO* RS;	// register select.  H:data, L:cmd
 	GPIO* RW;	// direction select. H:read, L:write
@@ -87,10 +88,29 @@ private:
 		SETTING3,
 		SETTING4,
 		MAX_INIT_DISP
-	};
+	}init_state;
 
-    InitState init_state;
+	enum DispState
+	{
+	    INIT,
+	    OPERATION,
+	    WAITING
+	}disp_state;
 
+	enum OutState
+	{
+	    ROW_1_SET,
+	    ROW_1_WRITE,
+	    MAX_OUT
+	}out_state;
+
+	enum DispJob
+	{
+		text_job,
+		no_job
+	}disp_job;
+
+	unsigned char outArray[16];
 };
 
 #endif /* DISP_H_ */
