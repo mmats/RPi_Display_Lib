@@ -3,6 +3,8 @@
 #include <ctime>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
 
 Disp::Disp()
 {
@@ -184,7 +186,19 @@ void Disp::instructDisplay()
 			settings4.dual_single_line = 0;
 			settings4._5x10_5x8_dots = 0;
 			settings4.postfix = POSTFIX;
-//		Set_timer(TIMER_LCD, zeit1);
+		init_state = SETTING4;
+		usleep(15000);
+		break;
+
+	case SETTING4:
+		memcpy( &tmp, &settings4, sizeof(char) );
+		write( tmp,CMD );
+		init_state = SETTING3;
+		break;
+
+	case SETTING3:
+		memcpy( &tmp, &settings3, sizeof(char) );
+		write( tmp,CMD );
 		init_state = SETTING1;
 		break;
 
@@ -196,18 +210,6 @@ void Disp::instructDisplay()
 
 	case SETTING2:
 		memcpy( &tmp, &settings2, sizeof(char) );
-		write( tmp,CMD );
-		init_state = SETTING3;
-		break;
-
-	case SETTING3:
-		memcpy( &tmp, &settings3, sizeof(char) );
-		write( tmp,CMD );
-		init_state = SETTING4;
-		break;
-
-	case SETTING4:
-		memcpy( &tmp, &settings4, sizeof(char) );
 		write( tmp,CMD );
 		init_state = MAX_INIT_DISP;
 		break;
@@ -233,7 +235,7 @@ void Disp::process()
 		{
 		case INIT:
 			instructDisplay();
-//			Set_timer(TIMER_LCD, zeit2);
+			usleep(4100); // Set_timer(TIMER_LCD, zeit2);
 			break;
 
 		case OPERATION:
@@ -248,7 +250,7 @@ void Disp::process()
 			case ROW_1_WRITE:
 				write(outArray[i], DATA);
 				i++;
-				if (e > 20)
+				if (e > DISP_ROW_LENGTH)
 					out_state = MAX_OUT;
 				break;
 
@@ -257,16 +259,26 @@ void Disp::process()
 				disp_job = no_job;
 				break;
 			}
-//			Set_timer(TIMER_LCD, zeit2);
+			usleep(2000); // Set_timer(TIMER_LCD, zeit2);
 			break;
 
 		case WAITING:
-			if (disp_job == text_job)
+			if( disp_job == text_job )
 			{
 				e = 0;
 				i = 0;
 				disp_state = OPERATION;
 				out_state = ROW_1_SET;
+			}
+			else
+			{
+				disp_job = text_job;
+
+				char tmp[DISP_ROW_NUMBER][DISP_ROW_LENGTH] = {"123456789ABCDEF"};
+
+				for(int x=0; x<DISP_ROW_NUMBER; ++x)
+					for(int y=0; y<DISP_ROW_LENGTH; ++y)
+						outArray[(x+1)*y] = tmp[x][y];
 			}
 			break;
 		}

@@ -5,6 +5,8 @@
 
 #define PREFIX 1
 #define POSTFIX 0
+#define DISP_ROW_NUMBER 1
+#define DISP_ROW_LENGTH 16
 
 enum regSel
 {
@@ -110,7 +112,7 @@ private:
 		no_job
 	}disp_job;
 
-	unsigned char outArray[16];
+	unsigned char outArray[DISP_ROW_NUMBER * DISP_ROW_LENGTH];
 };
 
 #endif /* DISP_H_ */
