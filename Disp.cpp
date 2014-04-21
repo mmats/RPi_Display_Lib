@@ -297,6 +297,7 @@ void Disp::process()
 				disp_state = OPERATION;
 				out_state = ROW_1_SET;
 			}
+			// This "else" below is only for testing!!
 			else
 			{
 				disp_job = text_job;
