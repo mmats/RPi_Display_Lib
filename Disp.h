@@ -52,18 +52,12 @@ private:
 
 	struct
 	{
-		int display_shift_on : 1;		// 1:Display Shift On
-		int increment_decrement : 1;	// 1:Increment,				0:Decrement
-		int prefix : 6;
+		int postfix : 2;
+		int _5x10_5x8_dots : 1;			// 1:5x10 Dots				0:5x8 Dots
+		int dual_single_line : 1;		// 1:Dual Line				0:Single Line
+		int _8_4_bit : 1;				// 1:8-Bit					0:4-Bit
+		int prefix : 3;
 	}settings1;
-
-	struct
-	{
-		int cursor_blink_on : 1;		// 1:Cursor Blink On
-		int cursor_display_on : 1;		// 1:Cursor Display ON
-		int display_on : 1;				// 1:Display On
-		int prefix : 5;
-	}settings2;
 
 	struct
 	{
@@ -71,21 +65,32 @@ private:
 		int shift_right_left : 1;		// 1:Shift Right			0:Shift Left
 		int shift_display_cursor : 1;	// 1:Shift Display			0:Move Cursor
 		int prefix : 4;
+	}settings2;
+
+	struct
+	{
+		int display_shift_on : 1;		// 1:Display Shift On
+		int increment_decrement : 1;	// 1:Increment,				0:Decrement
+		int prefix : 6;
 	}settings3;
 
 	struct
 	{
-		int postfix : 2;
-		int _5x10_5x8_dots : 1;			// 1:5x10 Dots				0:5x8 Dots
-		int dual_single_line : 1;		// 1:Dual Line				0:Single Line
-		int _8_4_bit : 1;				// 1:8-Bit					0:4-Bit
-		int prefix : 3;
+		int cursor_blink_on : 1;		// 1:Cursor Blink On
+		int cursor_display_on : 1;		// 1:Cursor Display ON
+		int display_on : 1;				// 1:Display On
+		int prefix : 5;
 	}settings4;
 
 	enum InitState
 	{
 		START,
+		SET_INTERFACE_TO_8BIT_1,
+		SET_INTERFACE_TO_8BIT_2,
+		SET_INTERFACE_TO_8BIT_3,
 		SETTING1,
+		DISPLAY_OFF,
+		DISPLAY_CLEAR,
 		SETTING2,
 		SETTING3,
 		SETTING4,

@@ -161,6 +161,23 @@ void Disp::initDisplay()
 	init_state = START;
 	disp_state = INIT;
 	out_state  = ROW_1_SET;
+
+	settings1.prefix = PREFIX;
+		settings1._8_4_bit = 1;
+		settings1.dual_single_line = 0;
+		settings1._5x10_5x8_dots = 0;
+		settings1.postfix = POSTFIX;
+	settings2.prefix = PREFIX;
+		settings2.shift_display_cursor = 1;
+		settings2.shift_right_left = 0;
+		settings2.postfix = POSTFIX;
+	settings3.prefix = PREFIX;
+		settings3.increment_decrement = 1;
+		settings3.display_shift_on = 0;
+	settings4.prefix = PREFIX;
+		settings4.display_on = 1;
+		settings4.cursor_display_on = 0;
+		settings4.cursor_blink_on = 0;
 }
 
 void Disp::instructDisplay()
@@ -170,28 +187,44 @@ void Disp::instructDisplay()
 	switch( init_state )
 	{
 	case START:
-		settings1.prefix = PREFIX;
-			settings1.increment_decrement = 1;
-			settings1.display_shift_on = 0;
-		settings2.prefix = PREFIX;
-			settings2.display_on = 1;
-			settings2.cursor_display_on = 0;
-			settings2.cursor_blink_on = 0;
-		settings3.prefix = PREFIX;
-			settings3.shift_display_cursor = 1;
-			settings3.shift_right_left = 0;
-			settings3.postfix = POSTFIX;
-		settings4.prefix = PREFIX;
-			settings4._8_4_bit = 1;
-			settings4.dual_single_line = 0;
-			settings4._5x10_5x8_dots = 0;
-			settings4.postfix = POSTFIX;
-		init_state = SETTING4;
 		usleep(15000);
 		break;
 
-	case SETTING4:
-		memcpy( &tmp, &settings4, sizeof(char) );
+	case SET_INTERFACE_TO_8BIT_1:
+		write( 0b00110000,CMD );
+		init_state = SET_INTERFACE_TO_8BIT_2;
+		usleep(4100);
+		break;
+
+	case SET_INTERFACE_TO_8BIT_2:
+		write( 0b00110000,CMD );
+		init_state = SET_INTERFACE_TO_8BIT_3;
+		usleep(100);
+		break;
+
+	case SET_INTERFACE_TO_8BIT_3:
+		write( 0b00110000,CMD );
+		init_state = SETTING1;
+		break;
+
+	case SETTING1:
+		memcpy( &tmp, &settings1, sizeof(char) );
+		write( tmp,CMD );
+		init_state = DISPLAY_OFF;
+		break;
+
+	case DISPLAY_OFF:
+		write( 0b00001000,CMD );
+		init_state = DISPLAY_CLEAR;
+		break;
+
+	case DISPLAY_CLEAR:
+		write( 0b00000001,CMD );
+		init_state = SETTING2;
+		break;
+
+	case SETTING2:
+		memcpy( &tmp, &settings2, sizeof(char) );
 		write( tmp,CMD );
 		init_state = SETTING3;
 		break;
@@ -199,17 +232,11 @@ void Disp::instructDisplay()
 	case SETTING3:
 		memcpy( &tmp, &settings3, sizeof(char) );
 		write( tmp,CMD );
-		init_state = SETTING1;
+		init_state = SETTING4;
 		break;
 
-	case SETTING1:
-		memcpy( &tmp, &settings1, sizeof(char) );
-		write( tmp,CMD );
-		init_state = SETTING2;
-		break;
-
-	case SETTING2:
-		memcpy( &tmp, &settings2, sizeof(char) );
+	case SETTING4:
+		memcpy( &tmp, &settings4, sizeof(char) );
 		write( tmp,CMD );
 		init_state = MAX_INIT_DISP;
 		break;
@@ -235,7 +262,7 @@ void Disp::process()
 		{
 		case INIT:
 			instructDisplay();
-			usleep(4100); // Set_timer(TIMER_LCD, zeit2);
+			// Set_timer(TIMER_LCD, zeit2);
 			break;
 
 		case OPERATION:
