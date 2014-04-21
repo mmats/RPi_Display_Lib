@@ -164,7 +164,7 @@ void Disp::initDisplay()
 
 	settings1.prefix = PREFIX;
 		settings1._8_4_bit = 1;
-		settings1.dual_single_line = 0;
+		settings1.dual_single_line = 1;
 		settings1._5x10_5x8_dots = 0;
 		settings1.postfix = POSTFIX;
 	settings2.prefix = PREFIX;
@@ -254,7 +254,7 @@ void Disp::instructDisplay()
 
 void Disp::process()
 {
-	static int i, e;
+	static int character;
 
 	// if( Timer_over(TIMER_LCD) )
 	{
@@ -266,7 +266,6 @@ void Disp::process()
 			break;
 
 		case OPERATION:
-			e++;
 			switch (out_state)
 			{
 			case ROW_1_SET:
@@ -275,9 +274,21 @@ void Disp::process()
 				break;
 
 			case ROW_1_WRITE:
-				write(outArray[i], DATA);
-				i++;
-				if (e > DISP_ROW_LENGTH)
+				write(outArray[character], DATA);
+				character++;
+				if (character > DISP_ROW_LENGTH)
+					out_state = ROW_2_SET;
+				break;
+
+			case ROW_2_SET:
+				write(0xA8, CMD);
+				out_state = ROW_2_WRITE;
+				break;
+
+			case ROW_2_WRITE:
+				write(outArray[character], DATA);
+				character++;
+				if (character > 2*DISP_ROW_LENGTH)
 					out_state = MAX_OUT;
 				break;
 
@@ -292,8 +303,7 @@ void Disp::process()
 		case WAITING:
 			if( disp_job == text_job )
 			{
-				e = 0;
-				i = 0;
+				character = 0;
 				disp_state = OPERATION;
 				out_state = ROW_1_SET;
 			}

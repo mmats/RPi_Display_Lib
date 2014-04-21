@@ -5,8 +5,8 @@
 
 #define PREFIX 1
 #define POSTFIX 0
-#define DISP_ROW_NUMBER 1
-#define DISP_ROW_LENGTH 16
+#define DISP_ROW_NUMBER 2
+#define DISP_ROW_LENGTH 8
 
 enum regSel
 {
@@ -108,6 +108,8 @@ private:
 	{
 	    ROW_1_SET,
 	    ROW_1_WRITE,
+	    ROW_2_SET,
+	    ROW_2_WRITE,
 	    MAX_OUT
 	}out_state;
 
