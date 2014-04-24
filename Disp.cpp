@@ -307,6 +307,17 @@ void Disp::process()
 				disp_state = OPERATION;
 				out_state = ROW_1_SET;
 			}
+			// This "else" below is only for testing!!
+			else
+			{
+				disp_job = text_job;
+
+				char tmp[DISP_ROW_NUMBER][DISP_ROW_LENGTH] = {"123456789ABCDEF"};
+
+				for(int x=0; x<DISP_ROW_NUMBER; ++x)
+					for(int y=0; y<DISP_ROW_LENGTH; ++y)
+						outArray[(x+1)*y] = tmp[x][y];
+			}
 			break;
 		}
 	}
