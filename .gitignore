@@ -1,5 +1,11 @@
+# Files
+.cproject
+.directory
+.project
+
 # Directories
 /Debug
+/.settings
 
 # Compiled Object files
 *.slo
