@@ -3,39 +3,56 @@
 
 #include "GPIO.h"
 
-#define PREFIX 1
-#define POSTFIX 0
-#define DISP_ROW_NUMBER 2
-#define DISP_ROW_LENGTH 8
-
-enum regSel
-{
-	CMD = 0,
-	DATA = 1
-};
+#define PREFIX  0x01
+#define POSTFIX 0x00
+#define DISP_LINES 2
+#define DISP_LINE_LENGTH 16
+#define LINE_1_ADDR 0x00
+#define LINE_2_ADDR 0x40
 
 class Disp
 {
 public:
-	Disp();
-	Disp(int port[11]);
+	Disp(int* pins);
 	/* RS, RW, E, DB[0..7] */
 	~Disp();
 
 	void process();	// State machine
 
+	void writeText( unsigned char* textptr, int lineNr );
+
 	void displayClear();
+	void displayOn();
+	void displayOff();
 	void displayCursorHome();
 	void entryModeSet(bool ID, bool S);
 	void displayOnOff(bool D, bool C, bool B);
-	void displayCursorShift();
+	void displayCursorShift(bool SC, bool RL);
 	void functionSet(bool DL, bool N, bool F);
+
+	enum regSel
+	{
+		CMD = 0,
+		DATA = 1
+	};
+
+	enum DispJob
+	{
+		text_job,
+		no_job
+	}disp_job;
+
+	enum DispState
+	{
+	    INIT,
+	    OPERATION,
+	    WAITING
+	}disp_state;
 
 private:
 	void write(char data, regSel rs=DATA);
 	void read(char& data, regSel rs=DATA);
 	bool isBusy();
-	void initDisplay();
 	void instructDisplay();
 
 	GPIO* RS;	// register select.  H:data, L:cmd
@@ -97,13 +114,6 @@ private:
 		MAX_INIT_DISP
 	}init_state;
 
-	enum DispState
-	{
-	    INIT,
-	    OPERATION,
-	    WAITING
-	}disp_state;
-
 	enum OutState
 	{
 	    ROW_1_SET,
@@ -113,13 +123,7 @@ private:
 	    MAX_OUT
 	}out_state;
 
-	enum DispJob
-	{
-		text_job,
-		no_job
-	}disp_job;
-
-	unsigned char outArray[DISP_ROW_NUMBER * DISP_ROW_LENGTH];
+	unsigned char outArray[DISP_LINES * DISP_LINE_LENGTH];
 };
 
 #endif /* DISP_H_ */

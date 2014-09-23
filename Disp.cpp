@@ -6,45 +6,189 @@
 #include <unistd.h>
 
 
-Disp::Disp()
+Disp::Disp(int* pins)
 {
-	RS  = new GPIO(14,OUT);
-	RW  = new GPIO(15,OUT);
-	E   = new GPIO(18,OUT);
-	DB0 = new GPIO(11,OUT);
-	DB1 = new GPIO(23,OUT);
-	DB2 = new GPIO(24,OUT);
-	DB3 = new GPIO( 9,OUT);
-	DB4 = new GPIO(25,OUT);
-	DB5 = new GPIO( 8,OUT);
-	DB6 = new GPIO( 7,OUT);
-	DB7 = new GPIO(10,OUT);
+	RS  = new GPIO(pins[0],OUT);
+	RW  = new GPIO(pins[1],OUT);
+	E   = new GPIO(pins[2],OUT);
+	DB0 = new GPIO(pins[3],OUT);
+	DB1 = new GPIO(pins[4],OUT);
+	DB2 = new GPIO(pins[5],OUT);
+	DB3 = new GPIO(pins[6],OUT);
+	DB4 = new GPIO(pins[7],OUT);
+	DB5 = new GPIO(pins[8],OUT);
+	DB6 = new GPIO(pins[9],OUT);
+	DB7 = new GPIO(pins[10],OUT);
 
-	initDisplay();
+	init_state = START;
+	disp_state = INIT;
+	out_state  = ROW_1_SET;
+	disp_job   = no_job;
+
+	settings1.prefix = PREFIX;
+		settings1._8_4_bit = 1;
+		settings1.dual_single_line = 1;
+		settings1._5x10_5x8_dots = 0;
+		settings1.postfix = POSTFIX;
+	settings2.prefix = PREFIX;
+		settings2.shift_display_cursor = 0;
+		settings2.shift_right_left = 1;
+		settings2.postfix = POSTFIX;
+	settings3.prefix = PREFIX;
+		settings3.increment_decrement = 1;
+		settings3.display_shift_on = 0;
+	settings4.prefix = PREFIX;
+		settings4.display_on = 1;
+		settings4.cursor_display_on = 0;
+		settings4.cursor_blink_on = 0;
 }
-
-Disp::Disp(int port[11])
-{
-	RS  = new GPIO(port[0],OUT);
-	RW  = new GPIO(port[1],OUT);
-	E   = new GPIO(port[2],OUT);
-	DB0 = new GPIO(port[3],OUT);
-	DB1 = new GPIO(port[4],OUT);
-	DB2 = new GPIO(port[5],OUT);
-	DB3 = new GPIO(port[6],OUT);
-	DB4 = new GPIO(port[7],OUT);
-	DB5 = new GPIO(port[8],OUT);
-	DB6 = new GPIO(port[9],OUT);
-	DB7 = new GPIO(port[10],OUT);
-
-	initDisplay();
-}
-
 Disp::~Disp()
 {
+	displayClear();
+	displayOff();
 	delete RS; delete RW; delete E;
 	delete DB0; delete DB1; delete DB2; delete DB3;
 	delete DB4; delete DB5; delete DB6; delete DB7;
+}
+
+void Disp::process()
+{
+	static int character;
+
+	switch (disp_state)
+	{
+	case INIT:
+		instructDisplay();
+		break;
+
+	case OPERATION:
+		switch (out_state)
+		{
+		case ROW_1_SET:
+			character = 0;
+			write(0x80|LINE_1_ADDR, CMD);
+			out_state = ROW_1_WRITE;
+			break;
+
+		case ROW_1_WRITE:
+			write(outArray[character], DATA);
+			character++;
+			if( character >= DISP_LINE_LENGTH )
+				out_state = ROW_2_SET;
+			break;
+
+		case ROW_2_SET:
+			write(0x80|LINE_2_ADDR, CMD);
+			out_state = ROW_2_WRITE;
+			break;
+
+		case ROW_2_WRITE:
+			write(outArray[character], DATA);
+			character++;
+			if( character >= 2*DISP_LINE_LENGTH )
+				out_state = MAX_OUT;
+			break;
+
+		case MAX_OUT:
+		default:
+			disp_state = WAITING;
+			disp_job = no_job;
+			break;
+		}
+		while( isBusy() )
+		{
+			usleep(1);
+		}
+		break;
+
+	case WAITING:
+		if( disp_job == text_job )
+		{
+			disp_state = OPERATION;
+			out_state = ROW_1_SET;
+		}
+		break;
+	}
+}
+
+void Disp::writeText( unsigned char* textptr, int lineNr )
+{
+	int i;
+
+	if( lineNr>=1 && lineNr<=DISP_LINES )
+	{
+		for(i=0; i<DISP_LINE_LENGTH; ++i)
+			outArray[i+(lineNr-1)*DISP_LINE_LENGTH] = textptr[i];
+	}
+	else
+	{
+		// ERROR
+		for(i=0; i<DISP_LINE_LENGTH*DISP_LINES; ++i)
+			outArray[i] = '!';
+	}
+
+	disp_job = text_job;
+}
+
+void Disp::displayClear()
+{
+	write(0b00000001, CMD);
+}
+void Disp::displayOn()
+{
+	displayOnOff(1, settings4.cursor_display_on, settings4.cursor_blink_on);
+}
+void Disp::displayOff()
+{
+	displayOnOff(0, settings4.cursor_display_on, settings4.cursor_blink_on);
+}
+void Disp::displayCursorHome()
+{
+	write(0b00000010, CMD);
+}
+void Disp::entryModeSet(bool ID, bool S)
+{
+	settings3.prefix = PREFIX;
+	settings3.increment_decrement = ID;
+	settings3.display_shift_on = S;
+
+	char tmp;
+	memcpy( &tmp, &settings3, sizeof(char) );
+	write( tmp,CMD );
+}
+void Disp::displayOnOff(bool D, bool C, bool B)
+{
+	settings4.prefix = PREFIX;
+	settings4.display_on = D;
+	settings4.cursor_display_on = C;
+	settings4.cursor_blink_on = B;
+
+	char tmp;
+	memcpy( &tmp, &settings4, sizeof(char) );
+	write( tmp,CMD );
+}
+void Disp::displayCursorShift(bool SC, bool RL)
+{
+	settings2.prefix = PREFIX;
+	settings2.shift_display_cursor = SC;
+	settings2.shift_right_left = RL;
+	settings2.postfix = POSTFIX;
+
+	char tmp;
+	memcpy( &tmp, &settings2, sizeof(char) );
+	write( tmp,CMD );
+}
+void Disp::functionSet(bool DL, bool N, bool F)
+{
+	settings1.prefix = PREFIX;
+	settings1._8_4_bit = DL;
+	settings1.dual_single_line = N;
+	settings1._5x10_5x8_dots = F;
+	settings1.postfix = POSTFIX;
+
+	char tmp;
+	memcpy( &tmp, &settings1, sizeof(char) );
+	write( tmp,CMD );
 }
 
 void Disp::write(char data,regSel rs)
@@ -87,7 +231,6 @@ void Disp::write(char data,regSel rs)
 	delay.tv_nsec = 35L;
 	nanosleep(&delay , NULL);
 }
-
 void Disp::read(char& data,regSel rs)
 {
 	struct timespec delay;
@@ -146,7 +289,6 @@ void Disp::read(char& data,regSel rs)
 	delay.tv_nsec = 45L;
 	nanosleep(&delay , NULL);
 }
-
 bool Disp::isBusy()
 {
 	char data;
@@ -155,45 +297,22 @@ bool Disp::isBusy()
 	data &= 0x01;
 	return data;
 }
-
-void Disp::initDisplay()
-{
-	init_state = START;
-	disp_state = INIT;
-	out_state  = ROW_1_SET;
-
-	settings1.prefix = PREFIX;
-		settings1._8_4_bit = 1;
-		settings1.dual_single_line = 1;
-		settings1._5x10_5x8_dots = 0;
-		settings1.postfix = POSTFIX;
-	settings2.prefix = PREFIX;
-		settings2.shift_display_cursor = 1;
-		settings2.shift_right_left = 0;
-		settings2.postfix = POSTFIX;
-	settings3.prefix = PREFIX;
-		settings3.increment_decrement = 1;
-		settings3.display_shift_on = 0;
-	settings4.prefix = PREFIX;
-		settings4.display_on = 1;
-		settings4.cursor_display_on = 0;
-		settings4.cursor_blink_on = 0;
-}
-
 void Disp::instructDisplay()
 {
 	char tmp;
+	int i;
 
 	switch( init_state )
 	{
 	case START:
-		usleep(15000);
+		usleep(30000);
+		init_state = SET_INTERFACE_TO_8BIT_1;
 		break;
 
 	case SET_INTERFACE_TO_8BIT_1:
 		write( 0b00110000,CMD );
 		init_state = SET_INTERFACE_TO_8BIT_2;
-		usleep(4100);
+		usleep(5);
 		break;
 
 	case SET_INTERFACE_TO_8BIT_2:
@@ -214,12 +333,15 @@ void Disp::instructDisplay()
 		break;
 
 	case DISPLAY_OFF:
-		write( 0b00001000,CMD );
+		displayOff();
 		init_state = DISPLAY_CLEAR;
 		break;
 
 	case DISPLAY_CLEAR:
-		write( 0b00000001,CMD );
+		displayClear();
+		for(i=0; i<DISP_LINE_LENGTH*DISP_LINES; ++i)
+			outArray[i] = ' ';
+		displayCursorHome();
 		init_state = SETTING2;
 		break;
 
@@ -236,6 +358,7 @@ void Disp::instructDisplay()
 		break;
 
 	case SETTING4:
+		settings4.display_on=1;
 		memcpy( &tmp, &settings4, sizeof(char) );
 		write( tmp,CMD );
 		init_state = MAX_INIT_DISP;
@@ -249,65 +372,5 @@ void Disp::instructDisplay()
 	default:
 		init_state = START;
 		break;
-	}
-}
-
-void Disp::process()
-{
-	static int character;
-
-	// if( Timer_over(TIMER_LCD) )
-	{
-		switch (disp_state)
-		{
-		case INIT:
-			instructDisplay();
-			// Set_timer(TIMER_LCD, zeit2);
-			break;
-
-		case OPERATION:
-			switch (out_state)
-			{
-			case ROW_1_SET:
-				write(0x80, CMD);
-				out_state = ROW_1_WRITE;
-				break;
-
-			case ROW_1_WRITE:
-				write(outArray[character], DATA);
-				character++;
-				if (character > DISP_ROW_LENGTH)
-					out_state = ROW_2_SET;
-				break;
-
-			case ROW_2_SET:
-				write(0xA8, CMD);
-				out_state = ROW_2_WRITE;
-				break;
-
-			case ROW_2_WRITE:
-				write(outArray[character], DATA);
-				character++;
-				if (character > 2*DISP_ROW_LENGTH)
-					out_state = MAX_OUT;
-				break;
-
-			case MAX_OUT:
-				disp_state = WAITING;
-				disp_job = no_job;
-				break;
-			}
-			usleep(2000); // Set_timer(TIMER_LCD, zeit2);
-			break;
-
-		case WAITING:
-			if( disp_job == text_job )
-			{
-				character = 0;
-				disp_state = OPERATION;
-				out_state = ROW_1_SET;
-			}
-			break;
-		}
 	}
 }
