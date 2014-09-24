@@ -4,21 +4,23 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <initializer_list>
+#include <vector>
 
-
-Disp::Disp(int* pins)
+Disp::Disp(std::initializer_list<int> il)
 {
-	RS  = new GPIO(pins[0],OUT);
-	RW  = new GPIO(pins[1],OUT);
-	E   = new GPIO(pins[2],OUT);
-	DB0 = new GPIO(pins[3],OUT);
-	DB1 = new GPIO(pins[4],OUT);
-	DB2 = new GPIO(pins[5],OUT);
-	DB3 = new GPIO(pins[6],OUT);
-	DB4 = new GPIO(pins[7],OUT);
-	DB5 = new GPIO(pins[8],OUT);
-	DB6 = new GPIO(pins[9],OUT);
-	DB7 = new GPIO(pins[10],OUT);
+	std::vector<int> pins(il);
+	RS  = new GPIO(pins.at(0),OUT);
+	RW  = new GPIO(pins.at(1),OUT);
+	E   = new GPIO(pins.at(2),OUT);
+	DB0 = new GPIO(pins.at(3),OUT);
+	DB1 = new GPIO(pins.at(4),OUT);
+	DB2 = new GPIO(pins.at(5),OUT);
+	DB3 = new GPIO(pins.at(6),OUT);
+	DB4 = new GPIO(pins.at(7),OUT);
+	DB5 = new GPIO(pins.at(8),OUT);
+	DB6 = new GPIO(pins.at(9),OUT);
+	DB7 = new GPIO(pins.at(10),OUT);
 
 	init_state = START;
 	disp_state = INIT;

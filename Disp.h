@@ -2,6 +2,7 @@
 #define DISP_H_
 
 #include "GPIO.h"
+#include <initializer_list>
 
 #define PREFIX  0x01
 #define POSTFIX 0x00
@@ -13,8 +14,7 @@
 class Disp
 {
 public:
-	Disp(int* pins);
-	/* RS, RW, E, DB[0..7] */
+	Disp(std::initializer_list<int> il);	// RS, RW, E, DB[0..7]
 	~Disp();
 
 	void process();	// State machine
