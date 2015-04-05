@@ -3,6 +3,8 @@
 
 #include "GPIO.h"
 #include <initializer_list>
+#include <sstream>
+#include <string>
 
 #define PREFIX  0x01
 #define POSTFIX 0x00
@@ -20,6 +22,7 @@ public:
 	void process();	// State machine
 
 	void writeText( unsigned char* textptr, int lineNr );
+	void writeText( std::string* textptr, int lineNr );
 
 	void displayClear();
 	void displayOn();

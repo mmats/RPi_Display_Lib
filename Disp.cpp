@@ -2,6 +2,7 @@
 #include <GPIO.h>
 #include <ctime>
 #include <stdio.h>
+#include <sstream>
 #include <string.h>
 #include <unistd.h>
 #include <initializer_list>
@@ -115,12 +116,32 @@ void Disp::process()
 
 void Disp::writeText( unsigned char* textptr, int lineNr )
 {
-	int i;
+	unsigned i;
 
 	if( lineNr>=1 && lineNr<=DISP_LINES )
 	{
 		for(i=0; i<DISP_LINE_LENGTH; ++i)
 			outArray[i+(lineNr-1)*DISP_LINE_LENGTH] = textptr[i];
+	}
+	else
+	{
+		// ERROR
+		for(i=0; i<DISP_LINE_LENGTH*DISP_LINES; ++i)
+			outArray[i] = '!';
+	}
+
+	disp_job = text_job;
+}
+void Disp::writeText( std::string* textptr, int lineNr )
+{
+	unsigned i;
+
+	if( lineNr>=1 && lineNr<=DISP_LINES )
+	{
+		for(i=0; i<textptr->length(); ++i)
+			outArray[i+(lineNr-1)*DISP_LINE_LENGTH] = textptr->at(i);
+		for(i=textptr->length(); i<DISP_LINE_LENGTH; ++i)
+			outArray[i+(lineNr-1)*DISP_LINE_LENGTH] = ' ';
 	}
 	else
 	{
