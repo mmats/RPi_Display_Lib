@@ -138,7 +138,12 @@ void Disp::writeText( std::string* textptr, int lineNr )
 
 	if( lineNr>=1 && lineNr<=DISP_LINES )
 	{
-		for(i=0; i<textptr->length(); ++i)
+		// cut, if text is too long
+		unsigned max = textptr->length();
+		if( max > DISP_LINE_LENGTH )
+			max = DISP_LINE_LENGTH;
+
+		for(i=0; i<max; ++i)
 			outArray[i+(lineNr-1)*DISP_LINE_LENGTH] = textptr->at(i);
 		for(i=textptr->length(); i<DISP_LINE_LENGTH; ++i)
 			outArray[i+(lineNr-1)*DISP_LINE_LENGTH] = ' ';
